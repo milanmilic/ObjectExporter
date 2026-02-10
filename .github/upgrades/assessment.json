@@ -1,0 +1,197 @@
+{
+  "settings": {
+    "components": {
+      "code": false,
+      "binaries": false
+    },
+    "targetId": "netcoreapp0.0",
+    "targetDisplayName": ".NETCoreApp,Version=v0.0"
+  },
+  "analysisStartTime": "2026-02-06T07:28:05.7133844Z",
+  "analysisEndTime": "2026-02-06T07:28:09.8243276Z",
+  "privacyModeHelpUrl": "https://go.microsoft.com/fwlink/?linkid=2270980",
+  "stats": {
+    "summary": {
+      "projects": 1,
+      "issues": 3,
+      "incidents": 4,
+      "effort": 4
+    },
+    "charts": {
+      "severity": {
+        "Mandatory": 4,
+        "Optional": 0,
+        "Potential": 0,
+        "Information": 0
+      },
+      "category": {
+        "NuGet": 2,
+        "Project": 2
+      }
+    }
+  },
+  "projects": [
+    {
+      "path": "VSIXProject1\\VSIXProject1.csproj",
+      "startingProject": true,
+      "issues": 3,
+      "storyPoints": 4,
+      "properties": {
+        "appName": "VSIXProject1",
+        "projectKind": "ClassicClassLibrary",
+        "frameworks": [
+          "net481"
+        ],
+        "languages": [
+          "C#"
+        ],
+        "tools": [
+          "MSBuild"
+        ],
+        "isSdkStyle": false,
+        "numberOfFiles": 7,
+        "numberOfCodeFiles": 7,
+        "linesTotal": 606,
+        "linesOfCode": 606,
+        "totalApiScanned": 691,
+        "minLinesOfCodeToChange": 0,
+        "maxLinesOfCodeToChange": 0
+      },
+      "ruleInstances": [
+        {
+          "incidentId": "eb365994-0953-4699-8af4-5b9369d9e4c8",
+          "ruleId": "NuGet.0001",
+          "projectPath": "VSIXProject1\\VSIXProject1.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "Microsoft.VisualStudio.SDK, 17.0.32112.339\n\nRecommendation:\n\nMicrosoft.VisualStudio.SDK, 16.0.208",
+              "protected": "Microsoft.VisualStudio.SDK, 17.0.32112.339\n\nRecommendation:\n\nMicrosoft.VisualStudio.SDK, 16.0.208"
+            },
+            "kind": "File",
+            "path": "VSIXProject1\\VSIXProject1.csproj",
+            "snippet": "Microsoft.VisualStudio.SDK, 17.0.32112.339\n\nRecommendation:\n\nMicrosoft.VisualStudio.SDK, 16.0.208",
+            "protectedSnippet": "Microsoft.VisualStudio.SDK, 17.0.32112.339\n\nRecommendation:\n\nMicrosoft.VisualStudio.SDK, 16.0.208",
+            "label": "Microsoft.VisualStudio.SDK 17.0.32112.339",
+            "properties": {
+              "PackageId": "Microsoft.VisualStudio.SDK",
+              "PackageVersion": "17.0.32112.339",
+              "PackageNewVersion": "16.0.208",
+              "PackageReplacements": null
+            }
+          }
+        },
+        {
+          "incidentId": "0eda8d29-994b-4870-ba29-e0bffaf67096",
+          "ruleId": "NuGet.0001",
+          "projectPath": "VSIXProject1\\VSIXProject1.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "Microsoft.VSSDK.BuildTools, 17.14.2120\n\nRecommendation:\n\nMicrosoft.VSSDK.BuildTools, 15.7.104",
+              "protected": "Microsoft.VSSDK.BuildTools, 17.14.2120\n\nRecommendation:\n\nMicrosoft.VSSDK.BuildTools, 15.7.104"
+            },
+            "kind": "File",
+            "path": "VSIXProject1\\VSIXProject1.csproj",
+            "snippet": "Microsoft.VSSDK.BuildTools, 17.14.2120\n\nRecommendation:\n\nMicrosoft.VSSDK.BuildTools, 15.7.104",
+            "protectedSnippet": "Microsoft.VSSDK.BuildTools, 17.14.2120\n\nRecommendation:\n\nMicrosoft.VSSDK.BuildTools, 15.7.104",
+            "label": "Microsoft.VSSDK.BuildTools 17.14.2120",
+            "properties": {
+              "PackageId": "Microsoft.VSSDK.BuildTools",
+              "PackageVersion": "17.14.2120",
+              "PackageNewVersion": "15.7.104",
+              "PackageReplacements": null
+            }
+          }
+        },
+        {
+          "incidentId": "bb9d98cd-5fe1-460a-a3ee-59d66bcd5697",
+          "ruleId": "Project.0001",
+          "projectPath": "VSIXProject1\\VSIXProject1.csproj",
+          "state": "Active",
+          "location": {
+            "kind": "File",
+            "path": "VSIXProject1\\VSIXProject1.csproj"
+          }
+        },
+        {
+          "incidentId": "539c5668-f825-4cf1-bc90-d1548697451e",
+          "ruleId": "Project.0002",
+          "projectPath": "VSIXProject1\\VSIXProject1.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "Current target framework: .NETFramework,Version=v4.8.1\nRecommended target framework: netcoreapp0.0",
+              "protected": "Current target framework: .NETFramework,Version=v4.8.1\nRecommended target framework: netcoreapp0.0"
+            },
+            "kind": "File",
+            "path": "VSIXProject1\\VSIXProject1.csproj",
+            "snippet": "Current target framework: .NETFramework,Version=v4.8.1\nRecommended target framework: netcoreapp0.0",
+            "protectedSnippet": "Current target framework: .NETFramework,Version=v4.8.1\nRecommended target framework: netcoreapp0.0",
+            "properties": {
+              "CurrentTargetFramework": ".NETFramework,Version=v4.8.1",
+              "RecommendedTargetFramework": "netcoreapp0.0"
+            }
+          }
+        }
+      ],
+      "features": []
+    }
+  ],
+  "rules": {
+    "NuGet.0001": {
+      "id": "NuGet.0001",
+      "isFeature": false,
+      "description": "NuGet package is incompatible with selected target framework.\n\nPackage needs to be upgraded to a version supporting selected project target framework. If there no new package versions supporting new target framework, different package needs to be used and all code needs to be upgraded to new API.",
+      "label": "NuGet package is incompatible",
+      "severity": "Mandatory",
+      "effort": 1,
+      "links": [
+        {
+          "url": "https://go.microsoft.com/fwlink/?linkid=2262529",
+          "isCustom": false
+        }
+      ]
+    },
+    "Project.0001": {
+      "id": "Project.0001",
+      "isFeature": false,
+      "description": "Project file needs to be converted to SDK-style. Modern .NET framework projects require a change in the project file format and use SDK corresponding to project flavor and functionality.",
+      "label": "Project file needs to be converted to SDK-style",
+      "severity": "Mandatory",
+      "effort": 1,
+      "links": [
+        {
+          "title": "Overview of porting from .NET Framework to .NET",
+          "url": "https://go.microsoft.com/fwlink/?linkid=2265227",
+          "isCustom": false
+        },
+        {
+          "title": ".NET project SDKs",
+          "url": "https://go.microsoft.com/fwlink/?linkid=2265226",
+          "isCustom": false
+        }
+      ]
+    },
+    "Project.0002": {
+      "id": "Project.0002",
+      "isFeature": false,
+      "description": "Project\u0027s target framework(s) needs to be changed to the new target framework that you selected for this upgrade.\n\nDuring upgrade target framework will be adjusted to corresponding platform when applicable. In some cases project would result in multiple target frameworks after the upgrade if it was using features that now have their own platforms in modern .NET frameworks (windows, iOS, Android etc).",
+      "label": "Project\u0027s target framework(s) needs to be changed",
+      "severity": "Mandatory",
+      "effort": 1,
+      "links": [
+        {
+          "title": "Overview of porting from .NET Framework to .NET",
+          "url": "https://go.microsoft.com/fwlink/?linkid=2265227",
+          "isCustom": false
+        },
+        {
+          "title": ".NET project SDKs",
+          "url": "https://go.microsoft.com/fwlink/?linkid=2265226",
+          "isCustom": false
+        }
+      ]
+    }
+  }
+}

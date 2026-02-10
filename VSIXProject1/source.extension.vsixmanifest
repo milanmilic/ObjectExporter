@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+  <Metadata>
+    <Identity Id="ObjectExporter" Version="1.2.0" Language="en-US" Publisher="Milan Milic" />
+    <DisplayName>ObjectExporter</DisplayName>
+    <Description>ObjectExporter is a Visual Studio extension that enhances debugging by allowing you to instantly export any object paused at a breakpoint.
+Right‑click any object in your code while debugging and choose:
+
+Export to JSON – opens a new editor tab showing a fully navigable JSON tree with all fields and nested objects.
+Export to C# – generates a new tab containing a complete C# class schema for the object, including sub‑types and a fully populated object snapshot.
+
+All generated documents automatically receive the correct file extension (.json or .cs) and can be saved or renamed like any other file.
+Coming in the next version:
+Support for right‑click export directly from Autos, Locals, and Watch panels for even faster debugging workflows.</Description>
+  </Metadata>
+<Installation>
+  <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, )">
+    <ProductArchitecture>amd64</ProductArchitecture>
+  </InstallationTarget>
+  <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[17.0, )">
+    <ProductArchitecture>amd64</ProductArchitecture>
+  </InstallationTarget>
+  <InstallationTarget Id="Microsoft.VisualStudio.Enterprise" Version="[17.0, )">
+    <ProductArchitecture>amd64</ProductArchitecture>
+  </InstallationTarget>
+</Installation>
+  <Dependencies>
+    <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
+  </Dependencies>
+  <Prerequisites>
+    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[17.0, )" DisplayName="Visual Studio core editor" />
+  </Prerequisites>
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
+    <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%|" />
+  </Assets>
+</PackageManifest>

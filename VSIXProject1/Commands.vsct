@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <Extern href="stdidcmd.h" />
+  <Extern href="vsshlids.h" />
+
+  <Commands package="guidObjectExporterPackage">
+    <Groups>
+      <Group guid="guidExportObjectCmdSet" id="grpExportObjectCodeWin" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN" />
+      </Group>
+
+      <Group guid="guidExportObjectCmdSet" id="grpObjectExporterSubMenu" priority="0x0100">
+        <Parent guid="guidExportObjectCmdSet" id="mnuObjectExporter" />
+      </Group>
+    </Groups>
+
+    <Menus>
+      <Menu guid="guidExportObjectCmdSet" id="mnuObjectExporter" priority="0x0050" type="Menu">
+        <Parent guid="guidExportObjectCmdSet" id="grpExportObjectCodeWin" />
+        <Strings>
+          <ButtonText>Object Exporter</ButtonText>
+        </Strings>
+      </Menu>
+    </Menus>
+
+    <Buttons>
+      <Button guid="guidExportObjectCmdSet" id="cmdExportToJson" priority="0x0100" type="Button">
+        <Parent guid="guidExportObjectCmdSet" id="grpObjectExporterSubMenu" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>Export to JSON</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidExportObjectCmdSet" id="cmdExportToCSharp" priority="0x0200" type="Button">
+        <Parent guid="guidExportObjectCmdSet" id="grpObjectExporterSubMenu" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>Export to C#</ButtonText>
+        </Strings>
+      </Button>
+    </Buttons>
+  </Commands>
+
+  <Symbols>
+    <GuidSymbol name="guidObjectExporterPackage" value="{da49d3a9-ad35-4edb-9d8e-ffd4da433c18}" />
+    <GuidSymbol name="guidExportObjectCmdSet" value="{4c70fd0b-f459-4e4b-a566-3c42d185a2d1}">
+      <IDSymbol name="grpExportObjectCodeWin" value="0x1004" />
+      <IDSymbol name="cmdExportToJson" value="0x0100" />
+      <IDSymbol name="cmdExportToCSharp" value="0x0101" />
+      <IDSymbol name="mnuObjectExporter" value="0x1100" />
+      <IDSymbol name="grpObjectExporterSubMenu" value="0x1101" />
+    </GuidSymbol>
+  </Symbols>
+</CommandTable>

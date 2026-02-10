@@ -1,0 +1,5 @@
+Issue ID,Description,State,Severity,Story Points,Project Path,Location Kind,Path,Line,Column,Incident ID,Help Link,Assembly Name,Assembly Version,Assembly Public Key,Snippet
+NuGet.0001,NuGet package is incompatible,Active,Mandatory,1,VSIXProject1\VSIXProject1.csproj,File,VSIXProject1\VSIXProject1.csproj,,,Microsoft.VisualStudio.SDK 17.0.32112.339,,,,,"Microsoft.VisualStudio.SDK, 17.0.32112.339  Recommendation:  Microsoft.VisualStudio.SDK, 16.0.208"
+NuGet.0001,NuGet package is incompatible,Active,Mandatory,1,VSIXProject1\VSIXProject1.csproj,File,VSIXProject1\VSIXProject1.csproj,,,Microsoft.VSSDK.BuildTools 17.14.2120,,,,,"Microsoft.VSSDK.BuildTools, 17.14.2120  Recommendation:  Microsoft.VSSDK.BuildTools, 15.7.104"
+Project.0001,Project file needs to be converted to SDK-style,Active,Mandatory,1,VSIXProject1\VSIXProject1.csproj,File,VSIXProject1\VSIXProject1.csproj,,,,,,,,
+Project.0002,Project's target framework(s) needs to be changed,Active,Mandatory,1,VSIXProject1\VSIXProject1.csproj,File,VSIXProject1\VSIXProject1.csproj,,,,,,,,"Current target framework: .NETFramework,Version=v4.8.1 Recommended target framework: netcoreapp0.0"
