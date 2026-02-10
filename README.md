@@ -54,17 +54,8 @@ ObjectExporter enhances Visual Studio debugging by instantly generating JSON vie
 ---
 
 ## 🖼️ Screenshots
-
-> Replace the image links below with your own assets.
-
-### JSON Tree Example  
-![JSON Tree Example](assets/json-tree.png)
-
-### C# Schema Example  
-![CSharp Schema Example](assets/csharp-schema.png)
-
 ### Exported File Tabs  
-![Editor Tabs](assets/editor-tabs.png)
+![ObjectExporter add-on](ObjectExporter/Assets/Screenshot.png)
 
 ---
 
@@ -81,7 +72,7 @@ ObjectExporter enhances Visual Studio debugging by instantly generating JSON vie
 
 ## 🧪 Exapmle C# Export
 
-```
+```csharp
 // Schema
 public sealed class Order {
     public int Id { get; set; }
@@ -221,8 +212,7 @@ Export slow
 ---
 
 ## 🧾 License
-- Include your license (MIT recommended).
-
+- MIT LICENSE
 ---
 
 ## 🙏 Acknowledgments
