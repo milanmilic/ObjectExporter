@@ -55,7 +55,7 @@ ObjectExporter enhances Visual Studio debugging by instantly generating JSON vie
 
 ## 🖼️ Screenshots
 ### Exported File Tabs  
-![ObjectExporter add-on](Assets/Screenshot.png)
+![ObjectExporter add-on](ObjectExporter/Assets/Screenshot.png)
 
 ---
 
