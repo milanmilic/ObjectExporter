@@ -1,86 +1,229 @@
-ObjectExporter — Visual Studio Debug Object Exporter (JSON & C#)
-Export any object at a breakpoint to JSON or C# with a single right‑click.
-ObjectExporter is a Visual Studio VSIX extension that opens the exported content in a new editor tab, with the correct file extension (.json or .cs), ready to inspect, edit, save, or commit.
+# ObjectExporter — Visual Studio Debug Object Exporter (JSON & C#)
 
-Coming next: Right‑click export directly from Autos / Locals / Watch windows for even faster workflows.
+Export any debug‑time object into **JSON** or **C#** with a single right‑click.  
+ObjectExporter enhances Visual Studio debugging by instantly generating JSON views or C# schema representations of any object when execution is paused at a breakpoint.
 
+> **Next Update:** Right‑click export from **Autos / Locals / Watch** panels.
 
-✨ Features
+---
 
+## ✨ Features
 
-Context‑menu export while debugging
-Right‑click any object in source code when the debugger is paused → ObjectExporter → Export to JSON / Export to C#.
+- **Right‑click export while debugging**  
+  When the debugger is paused, right‑click any object identifier → **ObjectExporter** → **Export to JSON** or **Export to C#**.
 
+- **Instant editor tabs**  
+  Generated files open in new tabs with proper syntax highlighting and the correct extension (`.json` or `.cs`).
 
-Instant editor tabs
-Results open immediately in new tabs with proper syntax highlighting and file extensions.
+- **JSON Tree View**  
+  Displays a fully structured JSON representation with all nested objects and real runtime values.
 
+- **C# Schema Generation**  
+  Produces a complete class structure based on the inspected object, including nested types and a populated object snapshot.
 
-Rich JSON view
-A navigable tree that includes all fields, properties, and nested objects—ideal for API payloads, samples, and debugging artifacts.
+- **Editable & Savable**  
+  Exported tabs behave as regular files: save, rename, edit, and commit as needed.
 
+---
 
-C# schema generation
-A complete C# class model for the selected object (including nested types), plus a fully populated instance snapshot underneath.
+## 🔧 Requirements
 
+- Visual Studio 2022 or newer  
+- .NET managed debugging  
+- A running debug session paused at a breakpoint
 
-Save & rename
-Treat generated tabs like normal files: save to disk, rename, add to source control.
+---
 
+## 📦 Installation
 
+1. Install from the Visual Studio Marketplace (recommended).  
+2. Or clone this repository and build the VSIX manually.  
+3. Run the `.vsix` and restart Visual Studio if prompted.
 
-🔧 Requirements
+---
 
-Visual Studio 2022 or newer (Community, Professional, or Enterprise)
-.NET projects where the Visual Studio managed debugger can inspect objects
-A debug session paused at a breakpoint (or with execution otherwise suspended)
+## 🚀 Quick Start
 
+1. Set a breakpoint in your code  
+2. Start debugging  
+3. When paused, right‑click on an object in the source editor  
+4. Select **ObjectExporter** → **Export to JSON** or **Export to C#**  
+5. A new tab opens with exported content  
+6. Save or rename the file as desired
 
-The extension works for any object the Visual Studio debugger can evaluate at the current scope.
+---
 
+## 🖼️ Screenshots
 
-📦 Installation
+> Replace the image links below with your own assets.
 
-Install from Visual Studio Marketplace (recommended).
-Or build the VSIX locally and double‑click the generated .vsix file.
-Restart Visual Studio if prompted.
+### JSON Tree Example  
+![JSON Tree Example](assets/json-tree.png)
 
+### C# Schema Example  
+![CSharp Schema Example](assets/csharp-schema.png)
 
-After installation, no configuration is required.
+### Exported File Tabs  
+![Editor Tabs](assets/editor-tabs.png)
 
+---
 
-🚀 Quick Start
+## 🧭 How It Works
 
-Set a breakpoint in your code and start debugging.
-When execution pauses, right‑click the object (identifier) you want to export in the editor.
-Choose ObjectExporter → Export to JSON or Export to C#.
-A new tab opens with the exported content (.json or .cs).
-Save the file (Ctrl+S) and optionally rename it.
+- Reads the current value of the selected object through the Visual Studio debugger  
+- Traverses the object graph safely (cycle‑aware, preserves visited tracking)  
+- Generates either:
+  - structured JSON  
+  - inferred C# class definitions
+- Opens the generated text in a new Visual Studio editor window for editing and saving
 
+---
 
-🖼️ Screenshots
+## 🧪 Exapmle C# Export
 
-Replace the placeholders with your real images in the assets/ folder.
+```
+// Schema
+public sealed class Order {
+    public int Id { get; set; }
+    public string Title { get; set; } = "";
+    public User Owner { get; set; } = new();
+    public List<Item> Items { get; set; } = new();
+    public DateTimeOffset CreatedAt { get; set; }
+}
 
+public sealed class User {
+    public string UserId { get; set; } = "";
+    public string Name { get; set; } = "";
+    public List<string> Roles { get; set; } = new();
+}
 
+public sealed class Item {
+    public string Sku { get; set; } = "";
+    public int Qty { get; set; }
+    public decimal Price { get; set; }
+}
 
-JSON tree view
+// Snapshot (example object instance)
+var order = new Order {
+    Id = 42,
+    Title = "Sample",
+    Owner = new User {
+        UserId = "a1b2c3",
+        Name = "Ada",
+        Roles = new() { "admin", "editor" }
+    },
+    Items = new() {
+        new Item { Sku = "X-100", Qty = 2, Price = 9.99m },
+        new Item { Sku = "Y-200", Qty = 1, Price = 19.50m }
+    },
+    CreatedAt = DateTimeOffset.Parse("2026-02-10T08:00:00Z")
+};
+```
 
+---
 
+## 🧪 Example JSON Export
 
-C# schema & populated instance
+```json
+{
+  "id": 42,
+  "title": "Sample",
+  "owner": {
+    "userId": "a1b2c3",
+    "name": "Ada",
+    "roles": ["admin", "editor"]
+  },
+  "items": [
+    { "sku": "X-100", "qty": 2, "price": 9.99 },
+    { "sku": "Y-200", "qty": 1, "price": 19.5 }
+  ],
+  "createdAt": "2026-02-10T08:00:00Z"
+}
+```
+## ⚙️ Options & Behavior
 
+- JSON → .json
+- C# → .cs
+- Supports nested objects, lists, dictionaries, primitives
+- Prevents infinite loops from circular references
+- Very large graphs may be truncated for responsiveness
 
+---
 
-Editor tab with correct extension
+## 🧩 Roadmap
 
+- Export from Autos / Locals / Watch
+- JSON formatting settings
+- Depth limits
+- Partial export (selected fields only)
+- Custom converters
 
+---
 
+## ❓ FAQ
+- Does exporting modify the running app?
+- No — data is retrieved read‑only.
+- Does generated C# always compile?
+- Usually yes — dynamic patterns may need tweaks.
+- Are private fields included?
+- If the debugger can access them, yes.
 
-🧭 How It Works (High Level)
+---
 
-The extension asks the debugger for the current value of the selected symbol when paused.
-The object graph is walked safely (handling cycles and repeated references).
-For JSON, a normalized representation is produced (including all nested members).
-For C#, types are inferred and a class model is generated (root + nested types), followed by a materialized instance section for quick copy/paste into tests.
-The result is opened in a new document tab with the correct content type and extension for native Visual Studio features (syntax highlighting, formatting, save, etc.).
+## 🛠️ Development
+
+- Open solution in Visual Studio 2022 +
+- Set VSIX project as Startup Project
+- Build (Release)
+- .vsix appears in bin/Release/
+- Install into the Experimental Instance
+
+---
+
+## 🧰 Testing Tips
+
+- Test nested objects
+- Validate JSON
+- Test deep/hard objects
+- Confirm saved files reload correctly
+
+---
+
+## 🐞 Troubleshooting
+Menu not showing
+
+- Must be paused on breakpoint
+- Right‑click the identifier, not whitespace
+- Ensure extension is enabled under Manage Extensions
+
+Export slow
+
+- Try smaller objects
+- Check Output window
+
+---
+
+## 🔐 Privacy & Security
+
+- No external communication
+- All generation is local
+- Be mindful when exporting sensitive data
+
+---
+
+## 🤝 Contributing
+
+- Open an Issue
+- Fork the repo
+- Create a feature branch
+- Submit a PR
+
+---
+
+## 🧾 License
+- Include your license (MIT recommended).
+
+---
+
+## 🙏 Acknowledgments
+- Thanks to the Visual Studio Extensibility community for testing and feedback.
