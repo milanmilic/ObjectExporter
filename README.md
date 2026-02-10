@@ -212,8 +212,7 @@ Export slow
 ---
 
 ## 🧾 License
-- Include your license (MIT recommended).
-
+- MIT LICENSE
 ---
 
 ## 🙏 Acknowledgments
