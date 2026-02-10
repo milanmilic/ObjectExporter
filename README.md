@@ -72,7 +72,7 @@ ObjectExporter enhances Visual Studio debugging by instantly generating JSON vie
 
 ## 🧪 Exapmle C# Export
 
-```
+```csharp
 // Schema
 public sealed class Order {
     public int Id { get; set; }
