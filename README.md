@@ -1,39 +1,86 @@
-🧩 ObjectExporter – A Visual Studio Debug Extension for Exporting Objects as JSON or C#
-ObjectExporter is a Visual Studio VSIX extension that allows developers to export any object inspected during a paused debug session into either JSON or C# format with a simple right‑click. Designed to streamline debugging, reverse engineering, API modeling, and data analysis, ObjectExporter provides an instant, structured representation of complex objects without leaving the IDE.
+ObjectExporter — Visual Studio Debug Object Exporter (JSON & C#)
+Export any object at a breakpoint to JSON or C# with a single right‑click.
+ObjectExporter is a Visual Studio VSIX extension that opens the exported content in a new editor tab, with the correct file extension (.json or .cs), ready to inspect, edit, save, or commit.
 
-✨ Key Features
-✔ Right‑Click Export on Any Object During Debugging
-When the debugger is paused at a breakpoint, right‑click any object in your code editor and choose:
-Export to JSON
-
-Opens a new editor tab containing a fully structured JSON tree view
-Displays all properties, nested objects, and values
-Automatically applies the .json file extension
-The generated file can be freely saved, renamed, or modified
-
-Export to C#
-
-Generates a complete C# class schema for the selected object
-Includes all sub‑classes, nested types, and hierarchical structures
-Shows a fully populated object instance below the schema
-The tab is created with a .cs extension for easy saving or refactoring
+Coming next: Right‑click export directly from Autos / Locals / Watch windows for even faster workflows.
 
 
-🧭 Designed for Real Developer Workflows
-ObjectExporter is ideal for:
+✨ Features
 
-Inspecting and analyzing complex objects
-Converting runtime objects into reusable C# models
-Extracting sample JSON payloads for API design or documentation
-Generating test data and mocks
-Reverse engineering responses, DTOs, and nested structures
 
-All exported files behave like standard Visual Studio documents, allowing editing, syntax highlighting, saving, and version control.
+Context‑menu export while debugging
+Right‑click any object in source code when the debugger is paused → ObjectExporter → Export to JSON / Export to C#.
 
-🚧 Upcoming Features (Next Release)
-The upcoming version will introduce full support for:
-⭐ Right‑Click Export from Autos / Locals / Watch Panels
-You will be able to export objects directly from Visual Studio’s debugging tool windows — without needing to reference them in source code. The same Export to JSON and Export to C# options will be available right where developers inspect variables the most.
+
+Instant editor tabs
+Results open immediately in new tabs with proper syntax highlighting and file extensions.
+
+
+Rich JSON view
+A navigable tree that includes all fields, properties, and nested objects—ideal for API payloads, samples, and debugging artifacts.
+
+
+C# schema generation
+A complete C# class model for the selected object (including nested types), plus a fully populated instance snapshot underneath.
+
+
+Save & rename
+Treat generated tabs like normal files: save to disk, rename, add to source control.
+
+
+
+🔧 Requirements
+
+Visual Studio 2022 or newer (Community, Professional, or Enterprise)
+.NET projects where the Visual Studio managed debugger can inspect objects
+A debug session paused at a breakpoint (or with execution otherwise suspended)
+
+
+The extension works for any object the Visual Studio debugger can evaluate at the current scope.
+
 
 📦 Installation
-ObjectExporter can be installed from the Visual Studio Marketplace or by loading the VSIX file manually.
+
+Install from Visual Studio Marketplace (recommended).
+Or build the VSIX locally and double‑click the generated .vsix file.
+Restart Visual Studio if prompted.
+
+
+After installation, no configuration is required.
+
+
+🚀 Quick Start
+
+Set a breakpoint in your code and start debugging.
+When execution pauses, right‑click the object (identifier) you want to export in the editor.
+Choose ObjectExporter → Export to JSON or Export to C#.
+A new tab opens with the exported content (.json or .cs).
+Save the file (Ctrl+S) and optionally rename it.
+
+
+🖼️ Screenshots
+
+Replace the placeholders with your real images in the assets/ folder.
+
+
+
+JSON tree view
+
+
+
+C# schema & populated instance
+
+
+
+Editor tab with correct extension
+
+
+
+
+🧭 How It Works (High Level)
+
+The extension asks the debugger for the current value of the selected symbol when paused.
+The object graph is walked safely (handling cycles and repeated references).
+For JSON, a normalized representation is produced (including all nested members).
+For C#, types are inferred and a class model is generated (root + nested types), followed by a materialized instance section for quick copy/paste into tests.
+The result is opened in a new document tab with the correct content type and extension for native Visual Studio features (syntax highlighting, formatting, save, etc.).
