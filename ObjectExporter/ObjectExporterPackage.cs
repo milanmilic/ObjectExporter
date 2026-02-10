@@ -25,12 +25,12 @@ namespace ObjectExporter
     /// </para>
     /// </remarks>
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
-    [InstalledProductRegistration("Object Export", "Export debugger object to JSON/C#", "1.0")]
+    [InstalledProductRegistration("Object Export", "Export debugger object to JSON/C#", "1.2.0")]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideAutoLoad(Microsoft.VisualStudio.Shell.Interop.UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(Microsoft.VisualStudio.Shell.Interop.UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
-    [Guid(VSIXProject1Package.PackageGuidString)]
-    public sealed class VSIXProject1Package : AsyncPackage
+    [Guid(ObjectExporterPackage.PackageGuidString)]
+    public sealed class ObjectExporterPackage : AsyncPackage
     {
         /// <summary>
         /// VSIXProject1Package GUID string.
