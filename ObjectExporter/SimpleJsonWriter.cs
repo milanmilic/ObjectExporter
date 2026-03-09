@@ -8,8 +8,8 @@ namespace ObjectExporter
     internal static class SimpleJsonWriter
     {
         // Safety limits to avoid huge/cyclic graphs from debugger evaluation.
-        private const int DefaultMaxDepth = 6;
-        private const int DefaultMaxNodes = 2000;
+        private const int DefaultMaxDepth = 20;
+        private const int DefaultMaxNodes = 20000;
 
         public static string WriteExpression(Expression expr)
         {
@@ -244,9 +244,36 @@ namespace ObjectExporter
                 return false;
             }
 
+            // Debugger shows collections as "Count = N" or "Length = N" — must expand, not scalar.
+            if (IsCollectionSummaryValue(value))
+            {
+                return false;
+            }
+
             // If value is already short and informative, keep it scalar.
             // This also prevents dumping internal implementation details.
             return value.Length <= 200;
+        }
+
+        /// <summary>
+        /// Returns true when the debugger value string is a collection size summary like "Count = 2".
+        /// Such values must be expanded via DataMembers rather than serialised as strings.
+        /// </summary>
+        private static bool IsCollectionSummaryValue(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return false;
+            if (value.StartsWith("Count = ", StringComparison.Ordinal) ||
+                value.StartsWith("Length = ", StringComparison.Ordinal))
+            {
+                var eqIdx = value.IndexOf('=');
+                if (eqIdx > 0)
+                {
+                    var rest = value.Substring(eqIdx + 1).Trim();
+                    return int.TryParse(rest, System.Globalization.NumberStyles.None,
+                                        System.Globalization.CultureInfo.InvariantCulture, out _);
+                }
+            }
+            return false;
         }
 
         private static void Indent(StringBuilder sb, int indent)

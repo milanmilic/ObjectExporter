@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
 using System;
 using System.Threading.Tasks;
+using System.Windows.Automation;
 
 namespace ObjectExporter
 {
@@ -20,6 +21,102 @@ namespace ObjectExporter
             }
 
             return dte.Debugger.CurrentMode == dbgDebugMode.dbgBreakMode;
+        }
+
+        public static bool IsDebugVariableWindow(string caption)
+        {
+            if (string.IsNullOrEmpty(caption)) return false;
+            return caption == "Locals" ||
+                   caption == "Autos" ||
+                   caption.StartsWith("Watch", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Reads the Name column of the selected row in a Locals/Autos/Watch window using UI Automation.
+        /// Must be called while the debug window still has keyboard focus (e.g. from BeforeQueryStatus).
+        /// </summary>
+        public static string TryGetDebugWindowExpression()
+        {
+            try
+            {
+                var focused = AutomationElement.FocusedElement;
+                if (focused == null) return null;
+
+                // Walk up the automation tree to find the row (DataItem / ListItem / TreeItem).
+                var current = focused;
+                AutomationElement row = null;
+                for (int depth = 0; depth < 10; depth++)
+                {
+                    var ct = current.GetCurrentPropertyValue(AutomationElement.ControlTypeProperty) as ControlType;
+                    if (ct == ControlType.DataItem || ct == ControlType.ListItem || ct == ControlType.TreeItem)
+                    {
+                        row = current;
+                        break;
+                    }
+                    var parent = TreeWalker.RawViewWalker.GetParent(current);
+                    if (parent == null) break;
+                    current = parent;
+                }
+
+                if (row == null) return null;
+
+                // Read the first cell (Name column) specifically.
+                // VS Locals/Autos DataGridCells report as ControlType.Custom in WPF UIA.
+                var cell = TreeWalker.RawViewWalker.GetFirstChild(row);
+                while (cell != null)
+                {
+                    var cellCt = cell.GetCurrentPropertyValue(AutomationElement.ControlTypeProperty) as ControlType;
+                    if (cellCt == ControlType.Custom || cellCt == ControlType.Edit ||
+                        cellCt == ControlType.DataItem || cellCt == ControlType.Text)
+                    {
+                        // ValuePattern gives the raw cell text without decoration.
+                        object patternObj;
+                        if (cell.TryGetCurrentPattern(ValuePattern.Pattern, out patternObj))
+                        {
+                            var val = ((ValuePattern)patternObj).Current.Value;
+                            if (!string.IsNullOrWhiteSpace(val))
+                                return ExtractExpressionName(val);
+                        }
+
+                        var cellName = cell.GetCurrentPropertyValue(AutomationElement.NameProperty) as string;
+                        if (!string.IsNullOrWhiteSpace(cellName))
+                            return ExtractExpressionName(cellName);
+
+                        break;
+                    }
+                    cell = TreeWalker.RawViewWalker.GetNextSibling(cell);
+                }
+
+                // Last resort: row's own Name property (may include value/type info — clean it).
+                var rowName = row.GetCurrentPropertyValue(AutomationElement.NameProperty) as string;
+                return string.IsNullOrWhiteSpace(rowName) ? null : ExtractExpressionName(rowName);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Extracts a valid C# identifier / member-access expression from potentially noisy UIA text.
+        /// Stops at the first character that can't appear in a C# expression (space, '=', '{', ';', etc.).
+        /// </summary>
+        private static string ExtractExpressionName(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return null;
+            raw = raw.Trim();
+
+            var sb = new System.Text.StringBuilder();
+            foreach (char c in raw)
+            {
+                if (char.IsLetterOrDigit(c) || c == '_' || c == '.' || c == '[' || c == ']')
+                    sb.Append(c);
+                else
+                    break;
+            }
+
+            var result = sb.ToString().TrimEnd('.');
+            return string.IsNullOrWhiteSpace(result) ? null : result;
         }
 
         public static async Task ShowMessageAsync(AsyncPackage package, string title, string message)
@@ -122,22 +219,23 @@ namespace ObjectExporter
             Expression expr;
             try
             {
-                expr = dte.Debugger.GetExpression(expression, true, 1);
+                expr = dte.Debugger.GetExpression(expression, true, 3000);
             }
             catch
             {
                 expr = null;
             }
 
-            if (expr == null)
+            if (expr == null || !expr.IsValidValue)
             {
-                throw new InvalidOperationException($"Expression is not valid: {expression}");
+                throw new InvalidOperationException($"Expression could not be evaluated: {expression}");
             }
 
-            // Minimal JSON: name/value + immediate children (one level)
-            // For complex objects, user can expand by editing expression and re-export.
-            var json = SimpleJsonWriter.WriteExpression(expr);
-            return json;
+            // Yield so VS can finish closing the context menu before we start the heavy traversal.
+            await Task.Yield();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            return SimpleJsonWriter.WriteExpression(expr);
         }
 
         public static async Task<string> EvaluateToCSharpAsync(AsyncPackage package, string expression)
@@ -155,11 +253,15 @@ namespace ObjectExporter
                 throw new InvalidOperationException("Pause debugging (break mode) to export objects.");
             }
 
-            var expr = dte.Debugger.GetExpression(expression, true, 1);
-            if (expr == null)
+            var expr = dte.Debugger.GetExpression(expression, true, 3000);
+            if (expr == null || !expr.IsValidValue)
             {
-                throw new InvalidOperationException($"Expression is not valid: {expression}");
+                throw new InvalidOperationException($"Expression could not be evaluated: {expression}");
             }
+
+            // Yield so VS can finish closing the context menu before we start the heavy traversal.
+            await Task.Yield();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             return SimpleCSharpWriter.WriteExpression(expr);
         }

@@ -12,6 +12,18 @@
       <Group guid="guidExportObjectCmdSet" id="grpObjectExporterSubMenu" priority="0x0100">
         <Parent guid="guidExportObjectCmdSet" id="mnuObjectExporter" />
       </Group>
+
+      <Group guid="guidExportObjectCmdSet" id="grpExportObjectWatchWin" priority="0x0600">
+        <Parent guid="guidVSDebugGroup" id="IDM_WATCH_CONTEXT" />
+      </Group>
+
+      <Group guid="guidExportObjectCmdSet" id="grpExportObjectLocalsWin" priority="0x0600">
+        <Parent guid="guidVSDebugGroup" id="IDM_LOCALS_CONTEXT" />
+      </Group>
+
+      <Group guid="guidExportObjectCmdSet" id="grpExportObjectAutosWin" priority="0x0600">
+        <Parent guid="guidVSDebugGroup" id="IDM_AUTOS_CONTEXT" />
+      </Group>
     </Groups>
 
     <Menus>
@@ -42,6 +54,18 @@
     </Buttons>
   </Commands>
 
+  <CommandPlacements>
+    <CommandPlacement guid="guidExportObjectCmdSet" id="mnuObjectExporter" priority="0x0050">
+      <Parent guid="guidExportObjectCmdSet" id="grpExportObjectWatchWin" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidExportObjectCmdSet" id="mnuObjectExporter" priority="0x0050">
+      <Parent guid="guidExportObjectCmdSet" id="grpExportObjectLocalsWin" />
+    </CommandPlacement>
+    <CommandPlacement guid="guidExportObjectCmdSet" id="mnuObjectExporter" priority="0x0050">
+      <Parent guid="guidExportObjectCmdSet" id="grpExportObjectAutosWin" />
+    </CommandPlacement>
+  </CommandPlacements>
+
   <Symbols>
     <GuidSymbol name="guidObjectExporterPackage" value="{da49d3a9-ad35-4edb-9d8e-ffd4da433c18}" />
     <GuidSymbol name="guidExportObjectCmdSet" value="{4c70fd0b-f459-4e4b-a566-3c42d185a2d1}">
@@ -50,6 +74,15 @@
       <IDSymbol name="cmdExportToCSharp" value="0x0101" />
       <IDSymbol name="mnuObjectExporter" value="0x1100" />
       <IDSymbol name="grpObjectExporterSubMenu" value="0x1101" />
+      <IDSymbol name="grpExportObjectWatchWin" value="0x1005" />
+      <IDSymbol name="grpExportObjectLocalsWin" value="0x1006" />
+      <IDSymbol name="grpExportObjectAutosWin" value="0x1007" />
+    </GuidSymbol>
+
+    <GuidSymbol name="guidVSDebugGroup" value="{C9DD4A58-47FB-11D2-83E7-00C04F9902C1}">
+      <IDSymbol name="IDM_WATCH_CONTEXT" value="0x0500" />
+      <IDSymbol name="IDM_LOCALS_CONTEXT" value="0x0501" />
+      <IDSymbol name="IDM_AUTOS_CONTEXT" value="0x0502" />
     </GuidSymbol>
   </Symbols>
 </CommandTable>

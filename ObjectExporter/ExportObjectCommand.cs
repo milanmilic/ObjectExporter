@@ -23,6 +23,9 @@ namespace ObjectExporter
 
         private readonly AsyncPackage package;
 
+        private string _capturedWindowCaption;
+        private string _capturedDebugExpression;
+
         private ExportObjectCommand(AsyncPackage package, OleMenuCommandService commandService)
         {
             this.package = package ?? throw new ArgumentNullException(nameof(package));
@@ -82,17 +85,50 @@ namespace ObjectExporter
             var isDebugging = mode[0] != DBGMODE.DBGMODE_Design;
             command.Visible = isDebugging;
             command.Enabled = isDebugging;
+
+            // Pre-capture the selected expression while the debug window still has focus.
+            // BeforeQueryStatus fires before the menu renders, so FocusedElement is still the row.
+            if (isDebugging)
+            {
+                try
+                {
+                    var dte = package.GetServiceAsync(typeof(EnvDTE.DTE)).GetAwaiter().GetResult() as EnvDTE.DTE;
+                    _capturedWindowCaption = dte?.ActiveWindow?.Caption ?? string.Empty;
+                    _capturedDebugExpression = DebuggerExportService.IsDebugVariableWindow(_capturedWindowCaption)
+                        ? DebuggerExportService.TryGetDebugWindowExpression()
+                        : null;
+                }
+                catch
+                {
+                    _capturedWindowCaption = string.Empty;
+                    _capturedDebugExpression = null;
+                }
+            }
         }
 
         private async Task ExecuteAsync(ExportFormat format)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            var expr = await DebuggerExportService.TryGetExpressionTextAsync(package);
-            if (string.IsNullOrWhiteSpace(expr))
+            string expr;
+            if (DebuggerExportService.IsDebugVariableWindow(_capturedWindowCaption))
             {
-                await DebuggerExportService.ShowMessageAsync(package, "Export Object", "No expression found under caret.");
-                return;
+                expr = _capturedDebugExpression;
+                if (string.IsNullOrWhiteSpace(expr))
+                {
+                    await DebuggerExportService.ShowMessageAsync(package, "Export Object",
+                        "Could not determine the selected variable. Right-click directly on a variable row in the debug window.");
+                    return;
+                }
+            }
+            else
+            {
+                expr = await DebuggerExportService.TryGetExpressionTextAsync(package);
+                if (string.IsNullOrWhiteSpace(expr))
+                {
+                    await DebuggerExportService.ShowMessageAsync(package, "Export Object", "No expression found under caret.");
+                    return;
+                }
             }
 
             string content;

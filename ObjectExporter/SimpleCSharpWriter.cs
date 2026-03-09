@@ -5,8 +5,8 @@ namespace ObjectExporter
 {
     internal static class SimpleCSharpWriter
     {
-        private const int DefaultMaxDepth = 6;
-        private const int DefaultMaxNodes = 2000;
+        private const int DefaultMaxDepth = 20;
+        private const int DefaultMaxNodes = 20000;
 
         public static string WriteExpression(Expression expr)
         {
@@ -170,7 +170,16 @@ namespace ObjectExporter
                 else
                 {
                     var lit = TryFormatScalarLiteral(m);
-                    sb.Append(lit ?? "null");
+                    if (lit != null)
+                    {
+                        sb.Append(lit);
+                    }
+                    else
+                    {
+                        // TryFormatScalarLiteral returned null (e.g. unrecognised complex/collection type).
+                        // Let WriteInitializer try to expand it rather than emitting null.
+                        WriteInitializer(sb, m, typeNameHint: propName, parentNameHint: propName, depth: depth + 1, ctx: ctx, indent: indent + 4);
+                    }
                 }
             }
 
@@ -218,12 +227,28 @@ namespace ObjectExporter
                 raw = raw.Substring(1, raw.Length - 2);
             }
 
-            if (type.IndexOf("System.Boolean", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            if (type.IndexOf("System.Boolean", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                string.Equals(type, "bool", System.StringComparison.OrdinalIgnoreCase))
             {
                 return raw.Equals("true", System.StringComparison.OrdinalIgnoreCase) ? "true" : "false";
             }
 
-            if (type.IndexOf("System.Int32", System.StringComparison.OrdinalIgnoreCase) >= 0 || type.IndexOf("System.Int64", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            if (type.IndexOf("System.Int16", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.Int32", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.Int64", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.UInt16", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.UInt32", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.UInt64", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.Byte", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.SByte", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                string.Equals(type, "int", System.StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(type, "long", System.StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(type, "short", System.StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(type, "byte", System.StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(type, "uint", System.StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(type, "ulong", System.StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(type, "ushort", System.StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(type, "sbyte", System.StringComparison.OrdinalIgnoreCase))
             {
                 if (long.TryParse(raw, out var l))
                 {
@@ -231,7 +256,12 @@ namespace ObjectExporter
                 }
             }
 
-            if (type.IndexOf("System.Double", System.StringComparison.OrdinalIgnoreCase) >= 0 || type.IndexOf("System.Decimal", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            if (type.IndexOf("System.Single", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.Double", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.Decimal", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                string.Equals(type, "float", System.StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(type, "double", System.StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(type, "decimal", System.StringComparison.OrdinalIgnoreCase))
             {
                 if (double.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var d))
                 {
@@ -289,7 +319,34 @@ namespace ObjectExporter
                 return false;
             }
 
+            // Debugger shows collections as "Count = N" or "Length = N" — must expand, not scalar.
+            if (IsCollectionSummaryValue(trimmed))
+            {
+                return false;
+            }
+
             return trimmed.Length <= 200;
+        }
+
+        /// <summary>
+        /// Returns true when the debugger value string is a collection size summary like "Count = 2".
+        /// Such values must be expanded via DataMembers rather than serialised as string literals.
+        /// </summary>
+        private static bool IsCollectionSummaryValue(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return false;
+            if (value.StartsWith("Count = ", System.StringComparison.Ordinal) ||
+                value.StartsWith("Length = ", System.StringComparison.Ordinal))
+            {
+                var eqIdx = value.IndexOf('=');
+                if (eqIdx > 0)
+                {
+                    var rest = value.Substring(eqIdx + 1).Trim();
+                    return int.TryParse(rest, System.Globalization.NumberStyles.None,
+                                        System.Globalization.CultureInfo.InvariantCulture, out _);
+                }
+            }
+            return false;
         }
 
         private static string EscapeString(string value)
@@ -563,29 +620,55 @@ namespace ObjectExporter
                 return false;
             }
 
-            return type.IndexOf("System.String", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   type.IndexOf("System.Char", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   type.IndexOf("System.Boolean", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   type.IndexOf("System.DateTime", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   type.IndexOf("System.Int32", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   type.IndexOf("System.Int64", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   type.IndexOf("System.Double", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   type.IndexOf("System.Decimal", System.StringComparison.OrdinalIgnoreCase) >= 0;
+            // Full .NET type names
+            if (type.IndexOf("System.String", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.Char", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.Boolean", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.DateTime", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.Int16", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.Int32", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.Int64", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.UInt16", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.UInt32", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.UInt64", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.Byte", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.SByte", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.Single", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.Double", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                type.IndexOf("System.Decimal", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            // C# keyword aliases that the VS debugger often reports directly
+            switch (type.ToLowerInvariant())
+            {
+                case "int": case "long": case "short": case "byte":
+                case "uint": case "ulong": case "ushort": case "sbyte":
+                case "float": case "double": case "decimal":
+                case "bool": case "string": case "char":
+                    return true;
+            }
+
+            return false;
         }
 
         private static string MapScalarType(string type)
         {
-            if (type.IndexOf("System.String", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            if (type.IndexOf("System.String", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                string.Equals(type, "string", System.StringComparison.OrdinalIgnoreCase))
             {
                 return "string";
             }
 
-            if (type.IndexOf("System.Char", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            if (type.IndexOf("System.Char", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                string.Equals(type, "char", System.StringComparison.OrdinalIgnoreCase))
             {
                 return "char";
             }
 
-            if (type.IndexOf("System.Boolean", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            if (type.IndexOf("System.Boolean", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                string.Equals(type, "bool", System.StringComparison.OrdinalIgnoreCase))
             {
                 return "bool";
             }
@@ -595,24 +678,70 @@ namespace ObjectExporter
                 return "System.DateTime";
             }
 
-            if (type.IndexOf("System.Int32", System.StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                return "int";
-            }
-
-            if (type.IndexOf("System.Int64", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            if (type.IndexOf("System.Int64", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                string.Equals(type, "long", System.StringComparison.OrdinalIgnoreCase))
             {
                 return "long";
             }
 
-            if (type.IndexOf("System.Double", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            if (type.IndexOf("System.Int16", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                string.Equals(type, "short", System.StringComparison.OrdinalIgnoreCase))
             {
-                return "double";
+                return "short";
             }
 
-            if (type.IndexOf("System.Decimal", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            if (type.IndexOf("System.Int32", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                string.Equals(type, "int", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return "int";
+            }
+
+            if (type.IndexOf("System.UInt64", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                string.Equals(type, "ulong", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return "ulong";
+            }
+
+            if (type.IndexOf("System.UInt32", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                string.Equals(type, "uint", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return "uint";
+            }
+
+            if (type.IndexOf("System.UInt16", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                string.Equals(type, "ushort", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return "ushort";
+            }
+
+            if (type.IndexOf("System.SByte", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                string.Equals(type, "sbyte", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return "sbyte";
+            }
+
+            if (type.IndexOf("System.Byte", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                string.Equals(type, "byte", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return "byte";
+            }
+
+            if (type.IndexOf("System.Single", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                string.Equals(type, "float", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return "float";
+            }
+
+            if (type.IndexOf("System.Decimal", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                string.Equals(type, "decimal", System.StringComparison.OrdinalIgnoreCase))
             {
                 return "decimal";
+            }
+
+            if (type.IndexOf("System.Double", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                string.Equals(type, "double", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return "double";
             }
 
             return "string";

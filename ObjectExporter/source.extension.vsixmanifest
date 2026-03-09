@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="ObjectExporter" Version="1.3.0" Language="en-US" Publisher="Milan Milic" />
+        <Identity Id="ObjectExporter" Version="2.1.0" Language="en-US" Publisher="Milan Milic" />
         <DisplayName>ObjectExporter</DisplayName>
         <Description xml:space="preserve">
             ObjectExporter is a Visual Studio extension that enhances debugging by allowing you to instantly export any object paused at a breakpoint.
@@ -11,8 +11,8 @@
             Export to C# – generates a new tab containing a complete C# class schema for the object, including sub‑types and a fully populated object snapshot.
 
             All generated documents automatically receive the correct file extension (.json or .cs) and can be saved or renamed like any other file.
-            Coming in the next version:
-            Support for right‑click export directly from Autos, Locals, and Watch panels for even faster debugging workflows.
+
+            Right‑click export is also available directly from the Autos, Locals, and Watch debug panels.
         </Description>
         <Icon>Assets\ObjectExporter.png</Icon>
     </Metadata>
