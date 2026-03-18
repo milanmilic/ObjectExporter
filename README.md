@@ -6,7 +6,12 @@ ObjectExporter enhances Visual Studio debugging by instantly generating JSON vie
 > **New in 2.4.0 version:** Right‑click export from **Autos / Locals / Watch** panels.
 
 ---
-<iframe src="https://drive.google.com/file/d/1woQrrgKY1Ji6dVoC-tTOCtMATuSytAwX/preview" width="640" height="480" allow="autoplay"></iframe>
+<a href="https://youtu.be/M8qHN3kuWbo">
+  <img src="http://img.youtube.com/vi/M8qHN3kuWbo/maxresdefault.jpg" 
+       alt="ObjectExporter Demo" 
+       width="600" 
+       style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+</a>
 ---
 
 ## ✨ Features
