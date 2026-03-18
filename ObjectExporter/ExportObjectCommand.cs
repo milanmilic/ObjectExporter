@@ -147,6 +147,11 @@ namespace ObjectExporter
                     content = await DebuggerExportService.EvaluateToCSharpAsync(package, expr);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                await DebuggerExportService.ShowMessageAsync(package, "Export Object", "Conversion was cancelled by the user.");
+                return;
+            }
             catch (Exception ex)
             {
                 await DebuggerExportService.ShowMessageAsync(package, "Export Object", ex.Message);

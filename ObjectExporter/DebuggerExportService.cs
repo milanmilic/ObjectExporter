@@ -3,8 +3,10 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Automation;
+using System.Windows.Threading;
 
 namespace ObjectExporter
 {
@@ -201,11 +203,41 @@ namespace ObjectExporter
             return string.IsNullOrWhiteSpace(expr) ? null : expr;
         }
 
+        private static readonly TimeSpan DialogDelay = TimeSpan.FromSeconds(10);
+
         public static async Task<string> EvaluateToJsonAsync(AsyncPackage package, string expression)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            var dte = await package.GetServiceAsync(typeof(DTE)) as DTE;
+            var expr = GetValidExpression(package, expression);
+
+            // Yield so VS can finish closing the context menu before we start the heavy traversal.
+            await Task.Yield();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            return RunWriterWithTimeoutDialog(
+                (ct, progress) => SimpleJsonWriter.WriteExpression(expr, ct, progress));
+        }
+
+        public static async Task<string> EvaluateToCSharpAsync(AsyncPackage package, string expression)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            var expr = GetValidExpression(package, expression);
+
+            // Yield so VS can finish closing the context menu before we start the heavy traversal.
+            await Task.Yield();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            return RunWriterWithTimeoutDialog(
+                (ct, progress) => SimpleCSharpWriter.WriteExpression(expr, ct, progress));
+        }
+
+        private static Expression GetValidExpression(AsyncPackage package, string expression)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            var dte = package.GetServiceAsync(typeof(DTE)).ConfigureAwait(false).GetAwaiter().GetResult() as DTE;
             if (dte?.Debugger == null)
             {
                 throw new InvalidOperationException("Debugger service unavailable.");
@@ -231,39 +263,64 @@ namespace ObjectExporter
                 throw new InvalidOperationException($"Expression could not be evaluated: {expression}");
             }
 
-            // Yield so VS can finish closing the context menu before we start the heavy traversal.
-            await Task.Yield();
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            return SimpleJsonWriter.WriteExpression(expr);
+            return expr;
         }
 
-        public static async Task<string> EvaluateToCSharpAsync(AsyncPackage package, string expression)
+        /// <summary>
+        /// Runs a writer function on the UI thread, showing a timeout dialog if it takes longer than 10 seconds.
+        /// The writer periodically pumps WPF messages via WriteContext, which allows the DispatcherTimer to fire
+        /// and the dialog to render and accept user input.
+        /// </summary>
+        private static string RunWriterWithTimeoutDialog(Func<CancellationToken, Action<int>, string> writerFunc)
         {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            ThreadHelper.ThrowIfNotOnUIThread();
 
-            var dte = await package.GetServiceAsync(typeof(DTE)) as DTE;
-            if (dte?.Debugger == null)
+            var cts = new CancellationTokenSource();
+            Views.TimeoutDialog dialog = null;
+            DispatcherTimer timer = null;
+
+            try
             {
-                throw new InvalidOperationException("Debugger service unavailable.");
-            }
+                timer = new DispatcherTimer { Interval = DialogDelay };
+                timer.Tick += (s, e) =>
+                {
+                    timer.Stop();
+                    dialog = new Views.TimeoutDialog(
+                        "Object conversion is taking longer than 10 seconds.\nWould you like to wait or cancel?",
+                        "Cancel",
+                        "Continue");
 
-            if (dte.Debugger.CurrentMode != dbgDebugMode.dbgBreakMode)
+                    dialog.CancelRequested += (ds, de) =>
+                    {
+                        cts.Cancel();
+                    };
+
+                    dialog.WaitRequested += (ds, de) =>
+                    {
+                        dialog = null;
+                    };
+
+                    dialog.Show();
+                };
+                timer.Start();
+
+                Action<int> onProgress = (nodesProcessed) =>
+                {
+                    dialog?.UpdateProgress(nodesProcessed);
+                };
+
+                var result = writerFunc(cts.Token, onProgress);
+                return result;
+            }
+            finally
             {
-                throw new InvalidOperationException("Pause debugging (break mode) to export objects.");
+                timer?.Stop();
+                if (dialog != null)
+                {
+                    dialog.Close();
+                }
+                cts.Dispose();
             }
-
-            var expr = dte.Debugger.GetExpression(expression, true, 3000);
-            if (expr == null || !expr.IsValidValue)
-            {
-                throw new InvalidOperationException($"Expression could not be evaluated: {expression}");
-            }
-
-            // Yield so VS can finish closing the context menu before we start the heavy traversal.
-            await Task.Yield();
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            return SimpleCSharpWriter.WriteExpression(expr);
         }
     }
 }

@@ -1,5 +1,8 @@
 using EnvDTE;
+using System;
 using System.Text;
+using System.Threading;
+using System.Windows.Threading;
 
 namespace ObjectExporter
 {
@@ -11,6 +14,12 @@ namespace ObjectExporter
         public static string WriteExpression(Expression expr)
         {
             Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+            return WriteExpression(expr, CancellationToken.None, null);
+        }
+
+        public static string WriteExpression(Expression expr, CancellationToken cancellationToken, Action<int> onProgress)
+        {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             var sb = new StringBuilder();
             if (expr == null)
             {
@@ -18,7 +27,7 @@ namespace ObjectExporter
             }
 
             // Build a minimal set of POCO class definitions based on the debugger object graph.
-            var ctx = new WriteContext(DefaultMaxDepth, DefaultMaxNodes);
+            var ctx = new WriteContext(DefaultMaxDepth, DefaultMaxNodes, cancellationToken, onProgress);
             var rootName = ToPascalIdentifier(string.IsNullOrWhiteSpace(expr.Type) ? "Root" : expr.Type);
             var created = new System.Collections.Generic.Dictionary<string, ClassDef>(System.StringComparer.Ordinal);
 
@@ -38,7 +47,7 @@ namespace ObjectExporter
 
             // Emit object graph values (nested initializers)
             sb.AppendLine("// Values:");
-            var initCtx = new WriteContext(DefaultMaxDepth, DefaultMaxNodes);
+            var initCtx = new WriteContext(DefaultMaxDepth, DefaultMaxNodes, cancellationToken, onProgress);
             sb.Append("var root = ");
             WriteInitializer(sb, expr, typeNameHint: rootName, parentNameHint: "Root", depth: 0, ctx: initCtx, indent: 0);
             sb.AppendLine(";");
@@ -67,6 +76,13 @@ namespace ObjectExporter
             if (scalar != null)
             {
                 sb.Append(scalar);
+                return;
+            }
+
+            // Prevent accessing DataMembers on types whose member evaluation can crash the debuggee.
+            if (IsDangerousToExpand(expr.Type ?? string.Empty))
+            {
+                sb.Append("null");
                 return;
             }
 
@@ -279,6 +295,27 @@ namespace ObjectExporter
             return $"\"{EscapeString(raw)}\"";
         }
 
+        /// <summary>
+        /// Returns true for framework/runtime types whose member evaluation can crash the debuggee.
+        /// These are treated as scalars to prevent dangerous debugger function evaluations.
+        /// </summary>
+        private static bool IsDangerousToExpand(string type)
+        {
+            if (string.IsNullOrEmpty(type)) return false;
+
+            return type.IndexOf("System.RuntimeType", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   type.IndexOf("System.Reflection.", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   type.IndexOf("RuntimeMethodHandle", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   type.IndexOf("RuntimeFieldHandle", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   type.IndexOf("RuntimeTypeHandle", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   type.IndexOf("System.ModuleHandle", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   type.IndexOf("System.Runtime.CompilerServices.", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   type.IndexOf("System.Threading.Thread", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   type.IndexOf("System.AppDomain", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   string.Equals(type, "Type", System.StringComparison.Ordinal) ||
+                   string.Equals(type, "System.Type", System.StringComparison.OrdinalIgnoreCase);
+        }
+
         private static bool ShouldTreatAsScalarLikeJson(Expression expr)
         {
             Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
@@ -299,6 +336,13 @@ namespace ObjectExporter
             }
 
             var type = expr.Type ?? string.Empty;
+
+            // Prevent expanding types whose member evaluation can crash the debuggee.
+            if (IsDangerousToExpand(type))
+            {
+                return true;
+            }
+
             if (IsScalarType(type) ||
                 type.IndexOf("System.String", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
                 type.IndexOf("System.DateTime", System.StringComparison.OrdinalIgnoreCase) >= 0)
@@ -414,6 +458,13 @@ namespace ObjectExporter
                 return;
             }
 
+            // Prevent accessing DataMembers on types whose member evaluation can crash the debuggee.
+            var exprType = expr.Type ?? string.Empty;
+            if (IsDangerousToExpand(exprType))
+            {
+                return;
+            }
+
             var members = SafeDataMembers(expr);
             if (members == null || members.Count == 0)
             {
@@ -492,6 +543,12 @@ namespace ObjectExporter
             if (IsScalarType(type))
             {
                 return MapScalarType(type);
+            }
+
+            // Prevent accessing DataMembers on types whose member evaluation can crash the debuggee.
+            if (IsDangerousToExpand(type))
+            {
+                return "string";
             }
 
             // If it has members, treat as complex POCO
@@ -875,17 +932,40 @@ namespace ObjectExporter
             public int MaxDepth { get; }
             public int MaxNodes { get; }
             private int _nodes;
+            private readonly CancellationToken _cancellationToken;
+            private readonly Action<int> _onProgress;
+            private const int PumpInterval = 50;
 
-            public WriteContext(int maxDepth, int maxNodes)
+            public WriteContext(int maxDepth, int maxNodes, CancellationToken cancellationToken = default, Action<int> onProgress = null)
             {
                 MaxDepth = maxDepth;
                 MaxNodes = maxNodes;
+                _cancellationToken = cancellationToken;
+                _onProgress = onProgress;
             }
 
             public bool TryEnter()
             {
                 _nodes++;
+
+                if (_nodes % PumpInterval == 0)
+                {
+                    _onProgress?.Invoke(_nodes);
+                    PumpMessages();
+                    _cancellationToken.ThrowIfCancellationRequested();
+                }
+
                 return _nodes <= MaxNodes;
+            }
+
+            private static void PumpMessages()
+            {
+                var dispatcher = Dispatcher.CurrentDispatcher;
+                var frame = new DispatcherFrame();
+                dispatcher.BeginInvoke(
+                    DispatcherPriority.Background,
+                    new Action(() => frame.Continue = false));
+                Dispatcher.PushFrame(frame);
             }
         }
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="Object-Exporter" Version="2.4.0" Language="en-US" Publisher="Milan Milic" />
+        <Identity Id="Object-Exporter" Version="3.0.0" Language="en-US" Publisher="Milan Milic" />
         <DisplayName>Object-Exporter</DisplayName>
         <Description xml:space="preserve">
             Object-Exporter is a Visual Studio extension that enhances debugging by allowing you to instantly export any object paused at a breakpoint.
@@ -38,5 +38,6 @@
     <Assets>
         <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
         <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%|" />
+        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="LICENSE.txt" AssemblyName="LICENSE" />
     </Assets>
 </PackageManifest>

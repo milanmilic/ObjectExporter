@@ -2,6 +2,8 @@ using EnvDTE;
 using System;
 using System.Globalization;
 using System.Text;
+using System.Threading;
+using System.Windows.Threading;
 
 namespace ObjectExporter
 {
@@ -14,13 +16,19 @@ namespace ObjectExporter
         public static string WriteExpression(Expression expr)
         {
             Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+            return WriteExpression(expr, CancellationToken.None, null);
+        }
+
+        public static string WriteExpression(Expression expr, CancellationToken cancellationToken, Action<int> onProgress)
+        {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             if (expr == null)
             {
                 return "null";
             }
 
             var sb = new StringBuilder();
-            var ctx = new WriteContext(DefaultMaxDepth, DefaultMaxNodes);
+            var ctx = new WriteContext(DefaultMaxDepth, DefaultMaxNodes, cancellationToken, onProgress);
             WriteValue(sb, expr, depth: 0, ctx: ctx, indent: 0);
             return sb.ToString();
         }
@@ -201,6 +209,28 @@ namespace ObjectExporter
             return false;
         }
 
+        /// <summary>
+        /// Returns true for framework/runtime types whose member evaluation can crash the debuggee.
+        /// These are treated as scalars to prevent dangerous debugger function evaluations.
+        /// </summary>
+        private static bool IsDangerousToExpand(string type)
+        {
+            if (string.IsNullOrEmpty(type)) return false;
+
+            return type.IndexOf("System.RuntimeType", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   type.IndexOf("System.Reflection.", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   type.IndexOf("RuntimeMethodHandle", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   type.IndexOf("RuntimeFieldHandle", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   type.IndexOf("RuntimeTypeHandle", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   type.IndexOf("System.ModuleHandle", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   type.IndexOf("System.Runtime.CompilerServices.", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   type.IndexOf("System.Threading.Thread", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   type.IndexOf("System.AppDomain", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   // Bare "Type" reported by debugger for System.Type instances
+                   string.Equals(type, "Type", StringComparison.Ordinal) ||
+                   string.Equals(type, "System.Type", StringComparison.OrdinalIgnoreCase);
+        }
+
         private static bool ShouldTreatAsScalar(Expression expr)
         {
             Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
@@ -222,6 +252,13 @@ namespace ObjectExporter
 
             // Common scalar types.
             var type = expr.Type ?? string.Empty;
+
+            // Prevent expanding types whose member evaluation can crash the debuggee.
+            if (IsDangerousToExpand(type))
+            {
+                return true;
+            }
+
             if (type.IndexOf("System.String", StringComparison.OrdinalIgnoreCase) >= 0 ||
                 type.IndexOf("System.Char", StringComparison.OrdinalIgnoreCase) >= 0 ||
                 type.IndexOf("System.Boolean", StringComparison.OrdinalIgnoreCase) >= 0 ||
@@ -302,17 +339,40 @@ namespace ObjectExporter
             public int MaxDepth { get; }
             public int MaxNodes { get; }
             private int _nodes;
+            private readonly CancellationToken _cancellationToken;
+            private readonly Action<int> _onProgress;
+            private const int PumpInterval = 50;
 
-            public WriteContext(int maxDepth, int maxNodes)
+            public WriteContext(int maxDepth, int maxNodes, CancellationToken cancellationToken = default, Action<int> onProgress = null)
             {
                 MaxDepth = maxDepth;
                 MaxNodes = maxNodes;
+                _cancellationToken = cancellationToken;
+                _onProgress = onProgress;
             }
 
             public bool TryEnter()
             {
                 _nodes++;
+
+                if (_nodes % PumpInterval == 0)
+                {
+                    _onProgress?.Invoke(_nodes);
+                    PumpMessages();
+                    _cancellationToken.ThrowIfCancellationRequested();
+                }
+
                 return _nodes <= MaxNodes;
+            }
+
+            private static void PumpMessages()
+            {
+                var dispatcher = Dispatcher.CurrentDispatcher;
+                var frame = new DispatcherFrame();
+                dispatcher.BeginInvoke(
+                    DispatcherPriority.Background,
+                    new Action(() => frame.Continue = false));
+                Dispatcher.PushFrame(frame);
             }
         }
 
